@@ -42,6 +42,8 @@ How to run docker container on AWS Beanstalk
 
 ### 3. Build Beanstalk package
 
+        zip -r web_app.zip Dockerrun.aws.json .ebextensions
+
 ### 4. Run container on Beanstalk
 
 ### 5. Debug Beanstalk container
