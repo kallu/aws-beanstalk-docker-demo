@@ -1,7 +1,7 @@
 # aws-beanstalk-docker-demo
 How to run docker container on AWS Beanstalk
 
-1. Local development/debug
+### 1. Local development/debug
   * Build <code>docker build -t web_app .</code>
   * Run <code>docker container run --detach -p 80:80 web_app</code>
   * Test http://localhost/
@@ -13,7 +13,7 @@ How to run docker container on AWS Beanstalk
         
   * Kill <code>docker container kill CONTAINER_ID</code>
 
-2. Upload working container to ECR
+### 2. Upload working container to ECR
   * Create ECR repository<br>
 
         aws cloudformation create-stack --stack-name web-app-repo --template-body file://ecr.yaml
@@ -40,8 +40,8 @@ How to run docker container on AWS Beanstalk
         docker images
         docker images 123456789012.dkr.ecr.eu-west-1.amazonaws.com/web-app-repo
 
-3. Build Beanstalk package
+### 3. Build Beanstalk package
 
-4. Run container on Beanstalk
+### 4. Run container on Beanstalk
 
-5. Debug Beanstalk container
+### 5. Debug Beanstalk container
