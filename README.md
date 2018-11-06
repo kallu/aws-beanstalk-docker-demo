@@ -44,6 +44,10 @@ How to run docker container on AWS Beanstalk
 
         zip -r web_app.zip Dockerrun.aws.json .ebextensions
 
+NOTE1: Remember to edit Dockerrun.aws.json to point your container image and tag in your ECR -repo. See https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create_deploy_docker_v2config.html
+
+NOTE2: .ebextensions is where you put all custom configuration you want to have on docker hosts run by Beanstalk. This can be extra software installed on EC2 or Beanstalk configuration options etc. See https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/ebextensions.html
+
 ### 4. Run container on Beanstalk
 
 ### 5. Debug Beanstalk container
