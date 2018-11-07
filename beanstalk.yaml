@@ -14,21 +14,16 @@ Parameters:
     AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
 
   EnvironmentName:
-    Description: Environment name, either dev or prod.
+    Description: Environment name, either dev, test or prod.
+    Default: dev
     Type: String
     MinLength: 1
     MaxLength: 255
     AllowedValues:
       - dev
+      - test
       - prod
     ConstraintDescription: Specify either dev or prod
-
-  NetworkStackName:
-    Description: Name of an active CloudFormation stack of networking resources
-    Type: String
-    MinLength: 1
-    MaxLength: 255
-    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
 
   AppS3Bucket:
     Description: S3 Bucket containing your application package.
@@ -42,19 +37,12 @@ Parameters:
     MinLength: 1
     MaxLength: 255
 
-  DevInstanceType:
-    Description: The instance type for the dev environment
+  InstanceType:
+    Description: EC2 instance type
     Type: String
     MinLength: 1
     MaxLength: 255
-    Default: t2.micro
-
-  ProdInstanceType:
-    Description: The instance type for the prod environment
-    Type: String
-    MinLength: 1
-    MaxLength: 255
-    Default: t2.large
+    Default: t3.small
 
   SSLCertificateArn:
     Description: The SSL/TLS certificate ARN
@@ -76,13 +64,28 @@ Parameters:
     Type: Number
     MinValue: 1
     MaxValue: 20
-    Default: 6
+    Default: 4
     ConstraintDescription: Specify a number between 1 - 20
 
-Conditions:
-  CreateProdEnv: !Equals [ !Ref EnvironmentName, prod ]
-  TlsEnabled: !Not [ !Equals [ !Ref SSLCertificateArn, "" ] ]
+  LBPort:
+    Description: Loadbalancer Protocol
+    Type: Number
+    Default: 80
 
+  VpcId:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/cloudformation/web-app-vpc/vpcid'
+
+  PrivateSubnets:
+    Type: 'AWS::SSM::Parameter::Value<List<String>>'
+    Default: '/cloudformation/web-app-vpc/privsubnets'
+
+  PublicSubnets:
+    Type: 'AWS::SSM::Parameter::Value<List<String>>'
+    Default: '/cloudformation/web-app-vpc/pubsubnets'
+
+Conditions:
+  TlsEnabled: !Not [ !Equals [ !Ref SSLCertificateArn, "" ] ]
 
 Resources:
 
@@ -101,6 +104,35 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkEnhancedHealth
         - arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkService
+
+  LBsecgroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub 'Application sec.group for ${AWS::StackName}'
+      VpcId: !Ref VpcId
+
+  LBsecgroupIngressExt:
+    Type:  AWS::EC2::SecurityGroupIngress
+    DependsOn: LBsecgroup
+    Properties: 
+      CidrIp: 0.0.0.0/0
+      Description: External access from Internet
+      FromPort: !Ref LBPort
+      ToPort: !Ref LBPort
+      IpProtocol: tcp
+      GroupId: !Ref LBsecgroup
+
+  # Traffic between ALB and instances is configured by EB
+  # LBsecgroupIngressInt:
+  #   Type:  AWS::EC2::SecurityGroupIngress
+  #   DependsOn: LBsecgroup
+  #   Properties: 
+  #     Description: Internal access between sec.group members
+  #     FromPort: 0
+  #     ToPort: 65535
+  #     IpProtocol: tcp
+  #     GroupId: !Ref LBsecgroup
+  #     SourceSecurityGroupId: !Ref LBsecgroup
 
   Application:
     Type: AWS::ElasticBeanstalk::Application
@@ -133,7 +165,7 @@ Resources:
     Type: AWS::ElasticBeanstalk::ConfigurationTemplate
     Properties:
       ApplicationName: !Ref Application
-      SolutionStackName: Multicontainer Docker 18.03 version 2.11.4
+      SolutionStackName: "64bit Amazon Linux 2018.03 v2.11.4 running Multi-container Docker 18.06.1-ce (Generic)"
       OptionSettings:
 
       - Namespace: aws:elasticbeanstalk:environment
@@ -157,14 +189,13 @@ Resources:
         OptionName: MaxSize
         Value: !Ref AutoScalingMaxInstanceCount
 
-      - Namespace: aws:autoscaling:launchconfiguration
-        OptionName: SecurityGroups
-        Value:
-          Fn::ImportValue: !Sub "${NetworkStackName}-AppSecurityGroupID"
+#      - Namespace: aws:autoscaling:launchconfiguration
+#        OptionName: SecurityGroups
+#        Value: !Ref LBsecgroup
 
       - Namespace: aws:autoscaling:launchconfiguration
         OptionName: InstanceType
-        Value: !If [ CreateProdEnv, !Ref ProdInstanceType, !Ref DevInstanceType ]
+        Value: !Ref InstanceType
 
       - Namespace: aws:autoscaling:launchconfiguration
         OptionName: IamInstanceProfile
@@ -172,7 +203,7 @@ Resources:
 
       - Namespace: aws:autoscaling:updatepolicy:rollingupdate
         OptionName: RollingUpdateEnabled
-        Value: true
+        Value: false
 
       - Namespace: aws:autoscaling:updatepolicy:rollingupdate
         OptionName: RollingUpdateType
@@ -197,67 +228,47 @@ Resources:
         # VPC OPTIONS (PLACEMENT OF RESOURCES IN SUBNETS)
       - Namespace: aws:ec2:vpc
         OptionName: VPCId
-        Value:
-          Fn::ImportValue: !Sub "${NetworkStackName}-VpcID"
+        Value: !Ref VpcId
 
       - Namespace: aws:ec2:vpc
         OptionName: Subnets
-        Value:
-          "Fn::Join":
+        Value: !Join
           - ','
-          - - !ImportValue
-                "Fn::Sub": "${NetworkStackName}-PrivateSubnet1ID"
-            - !ImportValue
-                "Fn::Sub": "${NetworkStackName}-PrivateSubnet2ID"
+          - !Ref PrivateSubnets
 
       - Namespace: aws:ec2:vpc
         OptionName: ELBSubnets
-        Value:
-          "Fn::Join":
+        Value: !Join
           - ','
-          - - !ImportValue
-                "Fn::Sub": "${NetworkStackName}-PublicSubnet1ID"
-            - !ImportValue
-                "Fn::Sub": "${NetworkStackName}-PublicSubnet2ID"
+          - !Ref PublicSubnets
 
       - Namespace: aws:elbv2:listener:default
         OptionName: ListenerEnabled
-        Value: !If [ TlsEnabled, false, true ]
+        Value: true
 
       - Namespace: aws:elbv2:loadbalancer
         OptionName: SecurityGroups
-        Value:
-          Fn::ImportValue: !Sub "${NetworkStackName}-ELBSecurityGroupID"
+        Value: !Ref LBsecgroup
 
       - Namespace: aws:elbv2:loadbalancer
         OptionName: ManagedSecurityGroup
-        Value:
-           Fn::ImportValue: !Sub "${NetworkStackName}-ELBSecurityGroupID"
+        Value: !Ref LBsecgroup
 
       - Namespace: aws:elbv2:listenerrule:default
         OptionName: PathPatterns
         Value: "/*"
 
-      - Namespace: !Sub
-        - "aws:elbv2:listener:${ListenPort}"
-        - ListenPort:
-            "Fn::ImportValue": !Sub "${NetworkStackName}-ELBIngressPort"
+      - Namespace: !Sub "aws:elbv2:listener:${LBPort}"
         OptionName: Protocol
         Value: !If [ TlsEnabled, HTTPS, HTTP ]
 
-      - Namespace: !Sub
-        - "aws:elbv2:listener:${ListenPort}"
-        - ListenPort:
-            "Fn::ImportValue": !Sub "${NetworkStackName}-ELBIngressPort"
+      - Namespace: !Sub "aws:elbv2:listener:${LBPort}"
         OptionName: Rules
         Value: default
 
-      - Namespace: !Sub
-        - "aws:elbv2:listener:${ListenPort}"
-        - ListenPort:
-            "Fn::ImportValue": !Sub "${NetworkStackName}-ELBIngressPort"
-        OptionName: SSLCertificateArns
-        Value: !Ref SSLCertificateArn
+ #     - Namespace: !Sub "aws:elbv2:listener:${LBPort}"
+ #       OptionName: SSLCertificateArns
+ #       Value: !Ref SSLCertificateArn
 
         # CLOUDWATCH LOGS
       - Namespace: aws:elasticbeanstalk:cloudwatch:logs
