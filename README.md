@@ -42,25 +42,31 @@ How to run docker container on AWS Beanstalk
 
 ### 3. Build AWS Infrastructure
 
-   * S3 bucket for Beanstalk application bundle.<br>
-
-         aws cloudformation create-stack --stack-name web-app-s3 \
-         --template-body file://s3bucket.yaml
-
    * VPC and subnets for hosting application infrastructure.
 
-         aws cloudformation create-stack --stack-name web-app-vpc \
-         --template-body file://vpc.yaml
+         aws cloudformation create-stack --stack-name web-app-vpc --template-body file://vpc.yaml
+
+   * S3 bucket for Beanstalk application bundle.
+
+   If you don't already have s3logs-ACCOUNTID-REGION -bucket for storing S3 access logs, you must
+   create one before creating bucket for application bundle.
+
+         aws cloudformation create-stack --stack-name s3logs --template-body file://s3logs.yaml
+
+   Once S3 logging bucket is ready, create a bucket for Beanstalk application bundle
+
+         aws cloudformation create-stack --stack-name web-app-s3 --template-body file://s3bucket.yaml \
+         --parameters ParameterKey=bucketname,ParameterValue=web-app-123456789012
 
 ### 4. Build Beanstalk application bundle and upload to S3
 
         zip -r web_app.zip Dockerrun.aws.json .ebextensions
-        aws s3 cp web_app.zip s3://BUCKET/web_app.zip
+        aws s3 cp web_app.zip s3://web-app-123456789012/web_app.zip
 
 NOTE1: Remember to edit Dockerrun.aws.json to point your container image and tag in your ECR -repo. See https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create_deploy_docker_v2config.html
 
 NOTE2: .ebextensions is where you put all custom configuration you want to have on docker hosts run by Beanstalk. This can be extra software installed on EC2 or Beanstalk configuration options etc. See https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/ebextensions.html
 
-### 5. Run container on Beanstalk
+### 5. Create Beanstalk application and run your container
 
 ### 6. Debug Beanstalk container
