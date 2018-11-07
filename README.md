@@ -66,4 +66,7 @@ NOTE2: .ebextensions is where you put all custom configuration you want to have 
 
 ### 5. Create Beanstalk application and run your container
 
+         aws cloudformation create-stack --stack-name web-app-eb --template-body file://beanstalk.yaml \
+         --parameters ParameterKey=keyname,ParameterValue=value
+
 ### 6. Debug Beanstalk container
