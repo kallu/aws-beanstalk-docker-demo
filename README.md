@@ -44,13 +44,13 @@ How to run docker container on AWS Beanstalk
 
    * S3 bucket for Beanstalk application bundle.<br>
 
-        aws cloudformation create-stack --stack-name web-app-s3 \
-        --template-body file://s3bucket.yaml
+         aws cloudformation create-stack --stack-name web-app-s3 \
+         --template-body file://s3bucket.yaml
 
    * VPC and subnets for hosting application infrastructure.
 
-        aws cloudformation create-stack --stack-name web-app-vpc \
-        --template-body file://vpc.yaml
+         aws cloudformation create-stack --stack-name web-app-vpc \
+         --template-body file://vpc.yaml
 
 ### 4. Build Beanstalk application bundle and upload to S3
 
