@@ -57,8 +57,8 @@ create a bucket for Beanstalk application bundle.
 
 ### 4. Build Beanstalk application bundle and upload to S3
 
-        zip -r web_app.zip Dockerrun.aws.json .ebextensions
-        aws s3 cp web_app.zip s3://web-app-123456789012/web_app.zip
+        zip -r web-app.zip Dockerrun.aws.json .ebextensions
+        aws s3 cp web-app.zip s3://web-app-123456789012/web_app.zip
 
 NOTE1: Remember to edit Dockerrun.aws.json to point your container image and tag in your ECR -repo. See https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create_deploy_docker_v2config.html
 
@@ -70,3 +70,9 @@ NOTE2: .ebextensions is where you put all custom configuration you want to have 
          --parameters ParameterKey=keyname,ParameterValue=value
 
 ### 6. Debug Beanstalk container
+
+Add here how to open a shell session on EC2 with SSM Session Manager.
+
+### 7. Shared persistent storage for containers
+
+This is left for reader to implement. Notice there is placeholder for mounting EFS on EC2 at .ebextensions/ef-mount.config
