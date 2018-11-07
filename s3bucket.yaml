@@ -1,0 +1,40 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: S3 bucket with optional access logging
+
+Parameters:
+
+  bucketname:
+    Type: String
+    Description: Name for the S3 bucket
+
+  #NOTE: This requires you to have s3logs-ACCOUNTID-REGION -bucket available for storing access logs
+  enableLogging:
+    Type: String
+    Description: Enable access logging to s3logs-ACCOUNTID-REGION/bucketname
+    AllowedValues:
+      - Yes
+      - No
+    Default: Yes
+
+Conditions:
+
+  LoggingEnabled: !Equals [ !Ref enableLogging, Yes ]  
+  LoggingDisabled: !Equals [ !Ref enableLogging, No ]
+
+Resources:
+  s3bucketlogging:
+    Type: "AWS::S3::Bucket"
+    Condition: LoggingEnabled
+    Properties:
+      BucketName: !Sub ${bucketname}
+      LoggingConfiguration:
+        DestinationBucketName: !Sub s3logs-${AWS::AccountId}-${AWS::Region}
+        LogFilePrefix: !Sub ${bucketname}/
+
+  s3bucketnologging:
+    Type: "AWS::S3::Bucket"
+    Condition: LoggingDisabled
+    Properties:
+      BucketName: !Sub ${bucketname}
+

@@ -1,0 +1,17 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: S3 bucket for storing access logs
+
+Resources:
+
+  s3logbucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Sub 's3logs-${AWS::AccountId}-${AWS::Region}'
+      AccessControl: LogDeliveryWrite
+      LifecycleConfiguration:
+        Rules:
+          - Status: Enabled
+            ExpirationInDays: 730
+            Id: PublicKeyExpirationRule
+
