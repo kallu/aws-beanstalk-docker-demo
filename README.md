@@ -48,11 +48,10 @@ How to run docker container on AWS Beanstalk
 
    * S3 bucket for Beanstalk application bundle.<br><br>
 If you don't already have s3logs-ACCOUNTID-REGION -bucket for storing S3 access logs,
-you must create one before creating bucket for application bundle.
+you must create one before creating bucket for application bundle. When S3 logging bucket is ready,
+create a bucket for Beanstalk application bundle.
 
          aws cloudformation create-stack --stack-name s3logs --template-body file://s3logs.yaml
- When S3 logging bucket is ready, create a bucket for Beanstalk application bundle
-
          aws cloudformation create-stack --stack-name web-app-s3 --template-body file://s3bucket.yaml \
          --parameters ParameterKey=bucketname,ParameterValue=web-app-123456789012
 
