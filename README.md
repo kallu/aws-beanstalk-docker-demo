@@ -44,7 +44,8 @@ How to run docker container on AWS Beanstalk
 
    * VPC and subnets for hosting application infrastructure.
 
-         aws cloudformation create-stack --stack-name web-app-vpc --template-body file://vpc.yaml
+         aws cloudformation create-stack --stack-name web-app-vpc --template-body file://vpc-1nat.yaml
+         # NOTE: If you want dedicated NAT-GW for each AZ, use vpc.yaml -template
 
    * S3 bucket for Beanstalk application bundle.<br><br>
 If you don't already have s3logs-ACCOUNTID-REGION -bucket for storing S3 access logs,
