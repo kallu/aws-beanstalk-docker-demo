@@ -4,6 +4,38 @@ Description:  Elastic Beanstalk Docker application
 
 # Modified from https://github.com/aws-samples/startup-kit-templates/blob/master/templates/elastic-beanstalk.cfn.yml
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Application"
+        Parameters:
+          - ApplicationName
+          - EnvironmentName
+          - AppS3Bucket
+          - AppS3Key
+      -
+        Label:
+          default: "EC2 Instances"
+        Parameters:
+          - InstanceType
+          - AutoScalingMinInstanceCount
+          - AutoScalingMaxInstanceCount
+      -
+        Label:
+          default: "Loadbalancer"
+        Parameters:
+          - LBPort
+          - SSLCertificateArn
+      -
+        Label:
+          default: "Network Config"
+        Parameters:
+          - VpcId
+          - PublicSubnets
+          - PrivateSubnets
+
 Parameters:
 
   ApplicationName:
@@ -122,18 +154,6 @@ Resources:
       IpProtocol: tcp
       GroupId: !Ref LBsecgroup
 
-  # Traffic between ALB and instances is configured by EB
-  # LBsecgroupIngressInt:
-  #   Type:  AWS::EC2::SecurityGroupIngress
-  #   DependsOn: LBsecgroup
-  #   Properties: 
-  #     Description: Internal access between sec.group members
-  #     FromPort: 0
-  #     ToPort: 65535
-  #     IpProtocol: tcp
-  #     GroupId: !Ref LBsecgroup
-  #     SourceSecurityGroupId: !Ref LBsecgroup
-
   Application:
     Type: AWS::ElasticBeanstalk::Application
     Properties:
@@ -161,6 +181,10 @@ Resources:
   # The configuration template contains environment parameters such as those
   # that relate to the autoscaling group (e.g. size, triggers), placement of
   # resources in the VPC, load balancer setup, and environment variables
+  #
+  # See
+  # https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+  # 
   ConfigurationTemplate:
     Type: AWS::ElasticBeanstalk::ConfigurationTemplate
     Properties:
@@ -231,11 +255,15 @@ Resources:
         Value: !Ref VpcId
 
       - Namespace: aws:ec2:vpc
+        OptionName: AssociatePublicIpAddress
+        Value: false
+
+      - Namespace: aws:ec2:vpc
         OptionName: Subnets
         Value: !Join
           - ','
           - !Ref PrivateSubnets
-
+    
       - Namespace: aws:ec2:vpc
         OptionName: ELBSubnets
         Value: !Join
@@ -340,4 +368,3 @@ Outputs:
     Value: !Sub "${ApplicationName}-${EnvironmentName}"
     Export:
       Name: !Sub "${AWS::StackName}-EnvironmentName"
-
