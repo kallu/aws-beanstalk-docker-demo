@@ -1,0 +1,37 @@
+Although Elastic Beanstalk (multi-container) is an abstraction layer on top of 
+ECS (Elastic Container Service), ECS constructs the container as "Tasks" and 
+not "Services". "Services" construct allows for direct integration between ALBs
+and "Tasks" defined in "Task Definition" running under the "Services".
+ElasticBeanStalk rather than using this construct, runs the containers instead 
+and uses static load balancer configured to link to target(s) on port 80.
+
+In answer your question, ALB dynamic port mapping is not supported for BeanStalk 
+multi-container environment. If you can test your EB environment again and go to 
+ECS in your AWS console, you will see an ECS cluster is created with a "Tasks" running 
+(illustrated in screenshot). In order for your BeanStalk environment to work with ALB, 
+you had performed the correct change to set "hostPort" to static port 80. From your 
+Dockerrun.aws.json file snippet, I presumed you would like to deploy replica webapp 
+containers then I would suggest you to take a look at using ECS instead of
+ElasticBeanStalk. 
+
+The advantages using ECS over ElasticBeanStalk are: 
+
+1. It supports ALB dynamic port mapping with "Services" in ECS, 
+so if your application scales out, the ALB will dynamically allocate 
+correct target ports to your hosts/containers.[1]
+
+2. It is a container orchestrator and will place tasks according to
+your placement strategy (e.g. AZ balanced) and will attempt to meet 
+the desired "Number of tasks/containers" to the cluster if there is 
+a container failure. This provides high availability to your webapp
+in the container level. 
+
+3. I would also suggest to take a look into ECS using Fargate[2], this 
+service is a compute engine for Amazon ECS that allows you to run
+containers without having to manage servers or clusters. For differences
+between ECS Launch Types (EC2 vs Fargate), please see [3] below. 
+
+References:
+[1] https://aws.amazon.com/premiumsupport/knowledge-center/dynamic-port-mapping-ecs/ 
+[2] https://eu-west-1.console.aws.amazon.com/ecs/home?region=eu-west-1#/firstRun 
+[3] https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html 
