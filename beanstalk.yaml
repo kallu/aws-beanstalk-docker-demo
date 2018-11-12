@@ -209,6 +209,10 @@ Resources:
         OptionName: InstanceRefreshEnabled
         Value: true
 
+      - Namespace: aws:elasticbeanstalk:healthreporting:system
+        OptionName: SystemType
+        Value: enhanced
+
       - Namespace: aws:elasticbeanstalk:environment
         OptionName: EnvironmentType
         Value: LoadBalanced
@@ -311,9 +315,13 @@ Resources:
         OptionName: Rules
         Value: default
 
- #     - Namespace: !Sub "aws:elbv2:listener:${LBPort}"
- #       OptionName: SSLCertificateArns
- #       Value: !Ref SSLCertificateArn
+      - Namespace: !Sub "aws:elbv2:listener:${LBPort}"
+        OptionName: SSLCertificateArns
+        Value:
+          !If
+            - TlsEnabled
+            - !Ref SSLCertificateArn
+            - !Ref "AWS::NoValue"
 
         # CLOUDWATCH LOGS
       - Namespace: aws:elasticbeanstalk:cloudwatch:logs
@@ -334,6 +342,11 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       Path: /
+      ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+          - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
+          - arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier
+          - arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -344,20 +357,6 @@ Resources:
                 - ec2.amazonaws.com
             Action:
               - sts:AssumeRole
-
-  AppPolicies:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: App
-      Roles:
-      - !Ref AppRole
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          -
-            Effect: Allow
-            Action: "*"
-            Resource: "*"
 
   AppInstanceProfile:
     Type: AWS::IAM::InstanceProfile
