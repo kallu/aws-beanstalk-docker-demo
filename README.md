@@ -76,4 +76,31 @@ Add here how to open a shell session on EC2 with SSM Session Manager.
 
 ### 7. Shared persistent storage for containers
 
-This is left for reader to implement. Notice there is placeholder for mounting EFS on EC2 at .ebextensions/ef-mount.config
+This is left for reader to implement :-)
+
+* There is placeholder for mounting EFS on EC2 at `.ebextensions/ef-mount.config`
+
+* To mount host volumes on containers you must define volume(s)
+
+        "volumes": [
+            {
+              "name": "app",
+              "host": {
+                "sourcePath": "/var/app/current/dist"
+              }
+            }
+        ]
+
+* And mount point in `containerDefinition` 
+
+        "mountPoints": [
+          {
+            "sourceVolume": "app",
+            "containerPath": "/var/www/html",
+            "readOnly": true
+          }
+        ]
+
+* Or you can simply mount all volumes from another container with `volumesFrom`
+
+* See https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create_deploy_docker_v2config.html
