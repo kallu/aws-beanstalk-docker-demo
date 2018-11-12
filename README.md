@@ -72,7 +72,22 @@ NOTE2: .ebextensions is where you put all custom configuration you want to have 
 
 ### 6. Debug Beanstalk container
 
-Add here how to open a shell session on EC2 with SSM Session Manager.
+Sometimes it could be useful for debugging purposes to have shell access to docker hosts and/or containers.
+As you have AWS Systems Manager agent installed on Beanstalk Docker hosts from `.ebextensions/ssm-agent.config`
+you can open an interactive shell session from AWS console navigating to AWS Systems Manager > Session Manager > Start a session. There you will have a list of all instances with SSM agent. Clicking “Start session” -button will open you an interactive shell in your browser window.
+
+You can open a session also from cmd-line with AWS CLI. First be sure you have a recent version of cli and if necessary update it. You also need to install session manager plugin to make this work. When ready, you can open a shell session with
+
+        aws ssm start-session --target i-0deadbeef12345678
+
+Note that
+
+* You didn’t create any user accounts (or ssh keys) on host. Access is controlled in AWS IAM policies.
+
+* EC2 instance had no SSH ports open in it’s security group.
+
+* It will work as long as you can HTTPS to AWS API endpoints (i.e. internet).
+
 
 ### 7. Shared persistent storage for containers
 
