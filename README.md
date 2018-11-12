@@ -76,7 +76,7 @@ Sometimes it could be useful for debugging purposes to have shell access to dock
 As you have AWS Systems Manager agent installed on Beanstalk Docker hosts from `.ebextensions/ssm-agent.config`
 you can open an interactive shell session from AWS console navigating to AWS Systems Manager > Session Manager > Start a session. There you will have a list of all instances with SSM agent. Clicking “Start session” -button will open you an interactive shell in your browser window.
 
-You can open a session also from cmd-line with AWS CLI. First be sure you have a recent version of cli and if necessary update it. You also need to install session manager plugin to make this work. When ready, you can open a shell session with
+You can open a session also from cmd-line with AWS CLI. First be sure you have a recent version of cli and if necessary update it. You also need to [install session manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) to make this work. When ready, you can open a shell session with
 
         aws ssm start-session --target i-0deadbeef12345678
 
