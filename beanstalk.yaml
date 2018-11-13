@@ -55,7 +55,7 @@ Parameters:
       - dev
       - test
       - prod
-    ConstraintDescription: Specify either dev or prod
+    ConstraintDescription: Specify either dev, test or prod
 
   AppS3Bucket:
     Description: S3 Bucket containing your application package.
@@ -74,14 +74,14 @@ Parameters:
     Type: String
     MinLength: 1
     MaxLength: 255
-    Default: t3.small
+    Default: t2.small
 
   SSLCertificateArn:
     Description: The SSL/TLS certificate ARN
     Type: String
     MinLength: 0
     MaxLength: 2048
-    Default: ""
+    Default: "NA"
 
   AutoScalingMinInstanceCount:
     Description: Minimum number of EC2 instances for Auto Scaling
@@ -117,7 +117,7 @@ Parameters:
     Default: '/cloudformation/web-app-vpc/pubsubnets'
 
 Conditions:
-  TlsEnabled: !Not [ !Equals [ !Ref SSLCertificateArn, "" ] ]
+  TlsEnabled: !Not [ !Equals [ !Ref SSLCertificateArn, "NA" ] ]
 
 Resources:
 
@@ -225,7 +225,7 @@ Resources:
         OptionName: ServiceRole
         Value: !Ref ElasticBeanstalkServiceRole
 
-        # AUTOSCALING OPTIONS
+      # AUTOSCALING OPTIONS
       - Namespace: aws:autoscaling:asg
         OptionName: MinSize
         Value: !Ref AutoScalingMinInstanceCount
@@ -233,10 +233,6 @@ Resources:
       - Namespace: aws:autoscaling:asg
         OptionName: MaxSize
         Value: !Ref AutoScalingMaxInstanceCount
-
-#      - Namespace: aws:autoscaling:launchconfiguration
-#        OptionName: SecurityGroups
-#        Value: !Ref LBsecgroup
 
       - Namespace: aws:autoscaling:launchconfiguration
         OptionName: InstanceType
@@ -270,7 +266,7 @@ Resources:
         OptionName: LowerThreshold
         Value: 40
 
-        # VPC OPTIONS (PLACEMENT OF RESOURCES IN SUBNETS)
+      # VPC OPTIONS (PLACEMENT OF RESOURCES IN SUBNETS)
       - Namespace: aws:ec2:vpc
         OptionName: VPCId
         Value: !Ref VpcId
@@ -291,10 +287,6 @@ Resources:
           - ','
           - !Ref PublicSubnets
 
-      - Namespace: aws:elbv2:listener:default
-        OptionName: ListenerEnabled
-        Value: true
-
       - Namespace: aws:elbv2:loadbalancer
         OptionName: SecurityGroups
         Value: !Ref LBsecgroup
@@ -306,6 +298,10 @@ Resources:
       - Namespace: aws:elbv2:listenerrule:default
         OptionName: PathPatterns
         Value: "/*"
+
+      - Namespace: !Sub "aws:elbv2:listener:${LBPort}"
+        OptionName: ListenerEnabled
+        Value: true
 
       - Namespace: !Sub "aws:elbv2:listener:${LBPort}"
         OptionName: Protocol
@@ -323,7 +319,7 @@ Resources:
             - !Ref SSLCertificateArn
             - !Ref "AWS::NoValue"
 
-        # CLOUDWATCH LOGS
+      # CLOUDWATCH LOGS
       - Namespace: aws:elasticbeanstalk:cloudwatch:logs
         OptionName: StreamLogs
         Value: true
@@ -347,6 +343,21 @@ Resources:
           - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
           - arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier
           - arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker
+          - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+      Policies:
+        -
+          PolicyName: "S3access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - "s3:Get*"
+                  - "s3:List*"
+                Resource:
+                  - !Sub "arn:aws:s3:::${AppS3Bucket}"
+                  - !Sub "arn:aws:s3:::${AppS3Bucket}/*"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -366,12 +377,6 @@ Resources:
       - !Ref AppRole
 
 Outputs:
-
-  Name:
-    Description: Elastic Beanstalk Stack Name
-    Value: !Ref AWS::StackName
-    Export:
-      Name: !Sub ${AWS::StackName}-Name
 
   EnvironmentURL:
     Description: Environment URL

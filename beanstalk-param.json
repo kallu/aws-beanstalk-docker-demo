@@ -1,0 +1,50 @@
+[
+    {
+        "ParameterKey": "ApplicationName",
+        "ParameterValue": "web-app"
+    },
+    {
+        "ParameterKey": "EnvironmentName",
+        "ParameterValue": "dev"
+    },
+    {
+        "ParameterKey": "AppS3Bucket",
+        "ParameterValue": "web-app-123456789012"
+    },
+    {
+        "ParameterKey": "AppS3Key",
+        "ParameterValue": "web-app.zip"
+    },
+    {
+        "ParameterKey": "VpcId",
+        "ParameterValue": "/cloudformation/web-app-vpc/vpcid"
+    },
+    {
+        "ParameterKey": "PrivateSubnets",
+        "ParameterValue": "/cloudformation/web-app-vpc/privsubnets"
+    },
+    {
+        "ParameterKey": "PublicSubnets",
+        "ParameterValue": "/cloudformation/web-app-vpc/pubsubnets"
+    },
+    {
+        "ParameterKey": "SSLCertificateArn",
+        "ParameterValue": "NA",
+    },
+    {
+        "ParameterKey": "LBPort",
+        "ParameterValue": "80"
+    },
+    {
+      "ParameterKey": "InstanceType",
+      "ParameterValue": "t2.small"
+    },
+    {
+        "ParameterKey": "AutoScalingMinInstanceCount",
+        "ParameterValue": "1"
+    },
+    {
+        "ParameterKey": "AutoScalingMaxInstanceCount",
+        "ParameterValue": "2"
+    }
+]
