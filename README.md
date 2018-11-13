@@ -59,7 +59,7 @@ create a bucket for Beanstalk application bundle.
 ### 4. Build Beanstalk application bundle and upload to S3
 
         zip -r web-app.zip Dockerrun.aws.json .ebextensions
-        aws s3 cp web-app.zip s3://web-app-123456789012/web_app.zip
+        aws s3 cp web-app.zip s3://web-app-123456789012/web-app.zip
 
 NOTE1: Remember to edit Dockerrun.aws.json to point your container image and tag in your ECR -repo. See https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create_deploy_docker_v2config.html
 
@@ -67,8 +67,29 @@ NOTE2: .ebextensions is where you put all custom configuration you want to have 
 
 ### 5. Create Beanstalk application and run your container
 
-         aws cloudformation create-stack --stack-name web-app-eb --template-body file://beanstalk.yaml \
-         --parameters ParameterKey=keyname,ParameterValue=value
+Create Elastic Beanstalk application and releated resources using Cloudformation. Note that template parameters are supplied in separate JSON -file rather than cmd-line parameters.
+Please review content of `beanstalk-param.json` before creating the stack.
+
+         aws --profile=kallu cloudformation create-stack --stack-name web-app-eb \
+            --template-body file://beanstalk.yaml \
+            --parameter file://beanstalk-param.json \
+            --capabilities CAPABILITY_IAM
+
+If everything went as planned you should have application listening at `EnvironmentURL` found from stack outputs.
+
+        aws cloudformation describe-stacks --stack-name web-app-eb
+        ...
+            "Outputs": [
+            ...
+                {
+                    "Description": "Environment URL", 
+                    "ExportName": "web-app-eb-EnvironmentURL", 
+                    "OutputKey": "EnvironmentURL", 
+                    "OutputValue": "awseb-AWSEB-17TEWBQ2Y0G57-540870288.eu-west-1.elb.amazonaws.com"
+                },
+            ...
+            ],
+        ...
 
 ### 6. Debug Beanstalk container
 
